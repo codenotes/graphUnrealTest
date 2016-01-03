@@ -14,13 +14,13 @@ void UMyBlueprintFunctionLibrary::createGraph(int32 id, float height, float widt
 	FGraphData fg;
 
 
-	fg.cellsize = cellsize;
 	fg.height = height;
+	fg.width = width;
+	fg.cellsize = cellsize;
 	fg.offsetX = offsetX;
 	fg.offsetY = offsetY;
 	fg.scaleX = scaleX;
 	fg.scaleY = scaleY;
-	fg.width = width;
 	fg.rangeOffsetX = rangeOffsetX;
 	fg.rangeOffsetY = rangeOffsetY;
 	fg.offsetLabelX = offsetLabelX;
@@ -31,6 +31,7 @@ void UMyBlueprintFunctionLibrary::createGraph(int32 id, float height, float widt
 
 	gGraphs[id] = fg;
 }
+
 UFUNCTION(BlueprintCallable, Category = "ROS")
 bool UMyBlueprintFunctionLibrary::generateAxisFromID(int32 id, TArray<FVector4> &lines)
 {
