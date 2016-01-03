@@ -160,13 +160,13 @@ public:
 
 		
 		bool bInRange=false;
-		std::ofstream of("c:\\temp\\gd.txt");
+	/*	std::ofstream of("c:\\temp\\gd.txt");
 
 
 
 		of << "rectangle" << std::endl;
 		of << "UL:" << UL.X << " ULY:" << UL.Y << " UR:" << UR.X << " URY:" << UR.Y << std::endl;
-		of << "LL:" << LL.X << " LLY:" << LL.Y << " UL:" << LR.X << " LRY:" << LR.Y << std::endl;
+		of << "LL:" << LL.X << " LLY:" << LL.Y << " UL:" << LR.X << " LRY:" << LR.Y << std::endl;*/
 
 
 
@@ -178,12 +178,12 @@ public:
 		//	GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, v.ToString());
 
 			//GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::fr(i));
-			of << "test vec:" << std::endl;
+//			of << "test vec:" << std::endl;
 
 			bInRange = v.X>UL.X && v.X<UR.X &&
 				v.Y>UL.Y && v.Y<LL.Y;
 			
-			of << "vX:"<< v.X << " vY:" << v.Y <<" unrange:"<<bInRange<< std::endl;
+	//		of << "vX:"<< v.X << " vY:" << v.Y <<" unrange:"<<bInRange<< std::endl;
 
 
 			//if not in region
