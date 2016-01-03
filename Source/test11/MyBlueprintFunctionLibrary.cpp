@@ -9,7 +9,7 @@
 std::map<int32, FGraphData> gGraphs;
 UFUNCTION(BlueprintCallable, Category = "ROS")
 void UMyBlueprintFunctionLibrary::createGraph(int32 id, float height, float width, int32 cellsize, float offsetX, float offsetY,
-	float scaleX, float scaleY, float rangeOffsetX/*=0.0*/, float rangeOffsetY/*=0.0*/, float offsetLabelX, float offsetLabelY)
+	float scaleX, float scaleY, float rangeOffsetX/*=0.0*/, float rangeOffsetY/*=0.0*/, float offsetLabelX, float offsetLabelY, float defaultMarkerSize )
 {
 	FGraphData fg;
 
@@ -25,6 +25,8 @@ void UMyBlueprintFunctionLibrary::createGraph(int32 id, float height, float widt
 	fg.rangeOffsetY = rangeOffsetY;
 	fg.offsetLabelX = offsetLabelX;
 	fg.offsetLabelY = offsetLabelY;
+	fg.defaultMarkerSize = defaultMarkerSize;
+
 
 
 	gGraphs[id] = fg;

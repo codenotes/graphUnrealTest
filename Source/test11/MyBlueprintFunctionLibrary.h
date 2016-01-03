@@ -42,6 +42,15 @@ struct FGraphData
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS")
 		float rangeOffsetY=0;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS")
+		float defaultMarkerSize = 10;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS")
+	TArray<FVector2D> RawPoints;
+	TArray<FVector2D> TranslatedPoints;
+
+
+
 
 };
 
@@ -54,21 +63,82 @@ class TEST11_API UMyBlueprintFunctionLibrary : public UBlueprintFunctionLibrary
 
 
 public:
+	UFUNCTION(BlueprintCallable, Category = "ROS")
+		static void createGraphFromGraphData(int32 handle, FGraphData graphData)
+	{
+		createGraph(handle, graphData.height, graphData.width, graphData.cellsize, graphData.offsetX, graphData.offsetLabelY,
+			graphData.scaleX, graphData.scaleY, graphData.rangeOffsetX, graphData.rangeOffsetY, graphData.offsetLabelX, graphData.offsetLabelY,
+			graphData.defaultMarkerSize);
+
+	}
+
 
 	UFUNCTION(BlueprintCallable, Category = "ROS")
 		static void createGraph(int32 id, float height, float width, int32 cellsize, float offsetX, float offsetY, float scaleX,
-			float scaleY, float rangeOffsetX = 0.0, float rangeOffsetY = 0.0, float offsetLabelX=0.0, float offsetLabelY=0.0);
+			float scaleY, float rangeOffsetX = 0.0, float rangeOffsetY = 0.0, float offsetLabelX = 0.0, float offsetLabelY = 0.0, float defaultMarkerSize=10);
 
 	UFUNCTION(BlueprintCallable, Category = "ROS")
 		static void isfirstOrSecondFloat(bool isFirst, float first, float second, float &val)
 	{
 
-		val=isFirst ? first : second;
+		val = isFirst ? first : second;
+
+	}
+
+	UFUNCTION(BlueprintCallable, Category = "ROS")
+		static void addGraphPoint(int32 handle, FVector2D fv)
+	{
+		FGraphData fg;
+		FVector2D fvout;
+
+		//fg & = gGraphs[handle];
+
+		gGraphs[handle].RawPoints.Add(fv);
+
+		translateGraphPoint(handle, gGraphs[handle].defaultMarkerSize, fv, fvout);
+		gGraphs[handle].TranslatedPoints.Add(fvout);
+
+		GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::FromInt(fg.TranslatedPoints.Num()));
+		//gGraphs[handle].TranslatedPointsQ.Enqueue(fvout);
+
+	}
+
+	UFUNCTION(BlueprintCallable, Category = "ROS")
+		static void returnGraphTranslatedPoints(int32 handle, TArray<FVector2D> &translatedPoints, FVector2D &markerSize)
+	{
+		
+		translatedPoints = gGraphs[handle].TranslatedPoints;
+		markerSize.X = gGraphs[handle].defaultMarkerSize;
+		markerSize.Y = markerSize.X;
+
 
 	}
 
 
+	UFUNCTION(BlueprintCallable, Category = "ROS")
+		static void clearGraphPoints(int32 handle)
+	{
+		gGraphs[handle].RawPoints.Empty();
+		gGraphs[handle].TranslatedPoints.Empty();
 
+
+	}
+
+	UFUNCTION(BlueprintCallable, Category = "ROS")
+		static void createDemoPoints(int32 handle)
+	{
+		//auto fg = gGraphs[handle];
+		FVector2D fv;
+
+		for (int i = -20; i <= 20; i++)
+		{
+			fv.X = i;
+			fv.Y = i;
+
+			addGraphPoint(handle, fv);
+		}
+
+	}
 
 
 	UFUNCTION(BlueprintCallable, Category = "ROS")
