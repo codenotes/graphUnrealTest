@@ -5,7 +5,6 @@
 
 
 
-
 std::map<int32, FGraphData> gGraphs;
 UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
 void UMyBlueprintFunctionLibrary::setGraphData(int32 handle, FGraphData graphData)
@@ -20,10 +19,56 @@ void UMyBlueprintFunctionLibrary::getGraphData(int32 handle, FGraphData & graphD
 	graphData = gGraphs[handle];
 }
 UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
-void UMyBlueprintFunctionLibrary::createGraph(int32 id, float height, float width, int32 cellsize, float offsetX, float offsetY,
-	float scaleX, float scaleY, float rangeOffsetX/*=0.0*/, float rangeOffsetY/*=0.0*/, float offsetLabelX, float offsetLabelY, float defaultMarkerSize )
+void UMyBlueprintFunctionLibrary::createGraph(int32 id, float height, float width, int32 cellsize, float offsetX, float offsetY, float scaleX,
+	float scaleY, float rangeOffsetX , float rangeOffsetY , float offsetLabelX , float offsetLabelY ,
+	float defaultMarkerSize,
+	float minRangeX ,
+	float maxRangeX ,
+	float minRangeY ,
+	float maxRangeY 
+	)
 {
 	FGraphData fg;
+
+
+
+#define EXP
+#ifdef EXP 
+	fg.cellsize = cellsize;
+	fg.offsetX = offsetX;
+	fg.offsetY = offsetY;
+	
+	
+	//fg.height = cellsize*(FMath::Abs(maxRangeY)  +FMath::Abs(minRangeY));
+	//fg.width  = cellsize*(FMath::Abs(maxRangeX)  + FMath::Abs(minRangeX));
+	
+	fg.height = height;
+	fg.width = width;
+
+	float rangeX = FMath::Abs(maxRangeX) + FMath::Abs(minRangeX);
+	float rangeY = FMath::Abs(maxRangeY) + FMath::Abs(minRangeY);
+
+	fg.scaleX = width / rangeX;// scaleX;// height;// scaleX;// fg.height / FMath::Abs(maxRangeX) / 2;
+	fg.scaleY = height / rangeY;//  scaleY;// width;// scaleY; // / FMath::Abs(maxRangeY) / 2;
+	fg.rangeOffsetX =  minRangeX;
+	fg.rangeOffsetY =  minRangeY;
+
+
+	/*fg.scaleX = scaleX;
+	fg.scaleY = scaleY;
+	fg.rangeOffsetX = rangeOffsetX + minRangeX;
+	fg.rangeOffsetY = rangeOffsetY + minRangeY;
+	*/
+	
+	fg.offsetLabelX = offsetLabelX;
+	fg.offsetLabelY = offsetLabelY;
+	fg.defaultMarkerSize = defaultMarkerSize;
+	fg.minRangeX = minRangeX;
+	fg.maxRangeX = maxRangeX;
+	fg.minRangeY = minRangeY;
+	fg.maxRangeY = maxRangeY;
+
+#else
 
 
 	fg.height = height;
@@ -38,6 +83,11 @@ void UMyBlueprintFunctionLibrary::createGraph(int32 id, float height, float widt
 	fg.offsetLabelX = offsetLabelX;
 	fg.offsetLabelY = offsetLabelY;
 	fg.defaultMarkerSize = defaultMarkerSize;
+
+
+
+
+#endif
 
 
 
@@ -120,8 +170,8 @@ void UMyBlueprintFunctionLibrary::clipTranslatedPoints(int32 handle)
 			//GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::fr(i));
 //			of << "test vec:" << std::endl;
 
-		bInRange = v.X > UL.X && v.X<UR.X &&
-			v.Y>UL.Y && v.Y < LL.Y;
+		bInRange = v.X >= UL.X && v.X<=UR.X &&
+			v.Y>=UL.Y && v.Y <= LL.Y;
 
 		//		of << "vX:"<< v.X << " vY:" << v.Y <<" unrange:"<<bInRange<< std::endl;
 
@@ -161,7 +211,7 @@ void UMyBlueprintFunctionLibrary::createDemoPoints(int32 handle)
 	//auto fg = gGraphs[handle];
 	FVector2D fv;
 
-	for (int i = -20; i <= 20; i++)
+	for (int i = -50; i <= 50; i++)
 	{
 		fv.X = i;
 		fv.Y = i;
@@ -179,6 +229,7 @@ bool UMyBlueprintFunctionLibrary::generateAxisFromID(int32 id, TArray<FVector4> 
 	fg = gGraphs[id]; //TODO test for valid key
 	int gridNum = (int)(fg.width / fg.cellsize);
 	int numHlines = fg.height / fg.cellsize;
+	
 
 	int i;
 	for (i = 0; i <= gridNum; i++)
@@ -209,12 +260,16 @@ bool UMyBlueprintFunctionLibrary::generateAxisFromID(int32 id, TArray<FVector4> 
 
 
 		fv.W = gridNum * fg.cellsize <= FMath::Abs(fg.height) ? gridNum * fg.cellsize : fg.height;
+		
 
 		lines.Add(fv);
 
 
 
 	}
+#ifdef LOGIT
+	UE_LOG(LogTemp, Warning, TEXT("---"));
+#endif
 
 	//	GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Yellow, FString::FromInt(lines.Num()));
 	return true;
@@ -301,38 +356,73 @@ void UMyBlueprintFunctionLibrary::generateGraphOffsetsFromID(int32 id, FVector4 
 	//if ((line.X == 0 && line.W == 0) || (line.Y == 0 && line.Z == 0))
 	//	isOriginLine = true;
 
+	//UE_LOG(LogTemp, Warning, TEXT("START OFFSETS"));
 
+	int32 ylevel = (int32)((fg.height - line.Y) / fg.scaleY) + fg.rangeOffsetY;
+	int32 xlevel = (int32)((line.X) / fg.scaleX) + fg.rangeOffsetX;
 
-
-	if (line.Y == 0 && line.Z!=0) //X label
+	if (line.Y == 0 && line.Z != 0) //X label
 	{
-		labelX = FString::FromInt((int32)((line.X) / fg.scaleX) + fg.rangeOffsetX);
+		labelX = FString::FromInt(xlevel);
 		isLabelX = true;
-	/*	labelPosition.X = PointB.X;
-		labelPosition.Y = PointB.Y + fg.offsetLabelX*fg.cellsize;*/
+		/*	labelPosition.X = PointB.X;
+			labelPosition.Y = PointB.Y + fg.offsetLabelX*fg.cellsize;*/
 		if (labelX == "0")
 			isOriginLine = true;
-		
+
 
 		//		GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::White, FString::FromInt(line.X));
 	}
 	else //Y Label
 	{
 		float numHlines = fg.height / fg.cellsize;
-		labelY = FString::FromInt((int32)((fg.height - line.Y ) / fg.scaleY) +fg.rangeOffsetY );
-	//	GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::FromInt(line.Y));
-	//	labelY = FString::FromInt((int32)((line.Y)));
+		labelY = FString::FromInt(ylevel);
+		//	GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::FromInt(line.Y));
+		//	labelY = FString::FromInt((int32)((line.Y)));
 		isLabelX = false;
 		if (labelY == "0")
 			isOriginLine = true;
-		
-	
+
+
 	}
 
+#ifdef LOGIT
+	//if (ylevel == 40 )
+	//{
+		FString f=FString::Printf(TEXT("TYPE:%s, xlev:%d ylev:%d posx:%f posy:%f"),  isLabelX?TEXT("XLABEL"):TEXT("YLABEL"),         xlevel, ylevel,  labelPosition.X, labelPosition.Y);
+		UE_LOG(LogTemp, Warning, TEXT("%s"), *f);
+	//}
+#endif
 
-	labelPosition.Y = PointB.Y + fg.offsetLabelY*fg.cellsize;
-	labelPosition.X = PointB.X + fg.offsetLabelX*fg.cellsize;
+	//to prevent overlapp at the LL corner of text
+	float cornerYOffset = 0;
+	float cornerXOffset = 0;
 
+
+
+	//is this the LL corner of Y
+	if (ylevel == fg.minRangeY && !isLabelX)
+	{
+		cornerYOffset = 0;
+		cornerXOffset = -25 ;
+		//just get rig of the label
+	//	labelY = "";
+	}
+
+	//if(line.X==line.Y==0 && isLabelX) 
+	//{
+	//	//GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, FString::FromInt(xlevel));
+	////	cornerYOffset = 0;
+	////	cornerXOffset = -20 -20;
+	//	labelX.AppendChar(U'*');
+
+	//}
+	//	
+
+
+	labelPosition.Y = PointB.Y + fg.offsetLabelY*fg.cellsize +cornerYOffset;
+	labelPosition.X = PointB.X + fg.offsetLabelX*fg.cellsize +cornerXOffset;
+	
 
 	//generateGraphOffsets(fg.height, fg.width, fg.cellsize, fg.offsetX, fg.offsetY, fg.scaleX, fg.scaleY, line, PointA, PointB, label);
 }

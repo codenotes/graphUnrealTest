@@ -81,7 +81,14 @@ struct FGraphData
 
 	bool dirty = true;
 
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
+	float minRangeX;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
+	float maxRangeX;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
+	float minRangeY;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
+	float maxRangeY;
 
 
 
@@ -109,7 +116,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
 		static void createGraph(int32 id, float height, float width, int32 cellsize, float offsetX, float offsetY, float scaleX,
 			float scaleY, float rangeOffsetX = 0.0, float rangeOffsetY = 0.0, float offsetLabelX = 0.0, float offsetLabelY = 0.0, 
-			float defaultMarkerSize=10);
+			float defaultMarkerSize=10,
+			float minRangeX=-10,
+			float maxRangeX=10,
+			float minRangeY=-10,
+			float maxRangeY=10
+			);
 
 	UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
 		static void isfirstOrSecondFloat(bool isFirst, float first, float second, float &val);
