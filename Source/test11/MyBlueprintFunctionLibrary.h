@@ -36,43 +36,50 @@ struct FGraphData
 {
 	GENERATED_USTRUCT_BODY()
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
 	float height;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
 	float width;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
 	int32 cellsize;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
 	float offsetX;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
 	float offsetY;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
 	float scaleX;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
 	float scaleY;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
 		float offsetLabelX;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
 		float offsetLabelY;
 
 	//for negative numbers
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
 		float rangeOffsetX=0;
 
 	//for negative
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
 		float rangeOffsetY=0;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
 		float defaultMarkerSize = 10;
 
 	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
 	TArray<FVector2D> RawPoints;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
 	TArray<FVector2D> TranslatedPoints;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
+	float widgetHeight=0.0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
+	float widgetWidth=0.0;
+
+	bool dirty = true;
 
 
 
@@ -89,354 +96,126 @@ class TEST11_API UMyBlueprintFunctionLibrary : public UBlueprintFunctionLibrary
 
 
 public:
-	UFUNCTION(BlueprintCallable, Category = "ROS")
-		static void setGraphData(int32 handle, FGraphData graphData)
-	{
-		createGraph(handle, graphData.height, graphData.width, graphData.cellsize, graphData.offsetX, graphData.offsetY,graphData.scaleX,
-			 graphData.scaleY, graphData.rangeOffsetX, graphData.rangeOffsetY, graphData.offsetLabelX, graphData.offsetLabelY,
-			graphData.defaultMarkerSize);
-
-	}
+	UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
+		static void setGraphData(int32 handle, FGraphData graphData);
 
 
-	UFUNCTION(BlueprintCallable, Category = "ROS")
-		static void getGraphData(int32 handle, FGraphData & graphData)
-	{
-
-		graphData = gGraphs[handle];
-
-
-	}
+	UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
+		static void getGraphData(int32 handle, FGraphData & graphData);
 
 
 
 
-	UFUNCTION(BlueprintCallable, Category = "ROS")
+	UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
 		static void createGraph(int32 id, float height, float width, int32 cellsize, float offsetX, float offsetY, float scaleX,
 			float scaleY, float rangeOffsetX = 0.0, float rangeOffsetY = 0.0, float offsetLabelX = 0.0, float offsetLabelY = 0.0, 
 			float defaultMarkerSize=10);
 
-	UFUNCTION(BlueprintCallable, Category = "ROS")
-		static void isfirstOrSecondFloat(bool isFirst, float first, float second, float &val)
-	{
+	UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
+		static void isfirstOrSecondFloat(bool isFirst, float first, float second, float &val);
 
-		val = isFirst ? first : second;
+	UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
+		static void addGraphPoint(int32 handle, FVector2D fv);
 
-	}
-
-	UFUNCTION(BlueprintCallable, Category = "ROS")
-		static void addGraphPoint(int32 handle, FVector2D fv)
-	{
-		FGraphData fg;
-		FVector2D fvout;
-
-		//fg & = gGraphs[handle];
-
-		gGraphs[handle].RawPoints.Add(fv);
-
-		translateGraphPoint(handle, gGraphs[handle].defaultMarkerSize, fv, fvout);
-		gGraphs[handle].TranslatedPoints.Add(fvout);
-
-		//GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::FromInt(fg.TranslatedPoints.Num()));
-		//gGraphs[handle].TranslatedPointsQ.Enqueue(fvout);
-
-	}
-
-
+	UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
+	static bool isPointInRect(FVector2D point,float height, float width, float offsetX, float offsetY);
 	
-	static void clipTranslatedPoints(int32 handle)
-	{
+	static void clipTranslatedPoints(int32 handle);
 
-		FGraphData *p = & gGraphs[handle];
-		int cnt = p->TranslatedPoints.Num();
-		FVector2D v;
-
-		FVector2D UL, UR,LL,LR;
-
-		UL = FVector2D(p->offsetX, p->offsetY);
-		UR = FVector2D(p->width + p->offsetX, p->offsetY);
-		LL = FVector2D( p->offsetX, p->height + p->offsetY);
-		LR = FVector2D(p->width + p->offsetX, p->offsetY+p->height);
-
-		
-		bool bInRange=false;
-	/*	std::ofstream of("c:\\temp\\gd.txt");
+	UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
+		static void returnGraphTranslatedPoints(int32 handle, TArray<FVector2D> &translatedPoints, FVector2D &markerSize);
 
 
+	UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
+		static void clearGraphPoints(int32 handle);
 
-		of << "rectangle" << std::endl;
-		of << "UL:" << UL.X << " ULY:" << UL.Y << " UR:" << UR.X << " URY:" << UR.Y << std::endl;
-		of << "LL:" << LL.X << " LLY:" << LL.Y << " UL:" << LR.X << " LRY:" << LR.Y << std::endl;*/
-
-
-
-		for (int i = 0; i < cnt;i++)
-		{
-			
-			v = p->TranslatedPoints[i];
-
-		//	GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, v.ToString());
-
-			//GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::fr(i));
-//			of << "test vec:" << std::endl;
-
-			bInRange = v.X>UL.X && v.X<UR.X &&
-				v.Y>UL.Y && v.Y<LL.Y;
-			
-	//		of << "vX:"<< v.X << " vY:" << v.Y <<" unrange:"<<bInRange<< std::endl;
+	UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
+		static void createDemoPoints(int32 handle);
 
 
-			//if not in region
-			if (!bInRange)
-			{
-				//GEngine->AddOnScreenDebugMessage(-1, 5, FColor::Red, v.ToString());
-				p->TranslatedPoints.RemoveAt(i, 1, true);
-				cnt--;
-				i--;
-
-				
-			}
-
-
-		}
-
-	}
-
-	UFUNCTION(BlueprintCallable, Category = "ROS")
-		static void returnGraphTranslatedPoints(int32 handle, TArray<FVector2D> &translatedPoints, FVector2D &markerSize)
-	{
-		
-		translatedPoints = gGraphs[handle].TranslatedPoints;
-		markerSize.X = gGraphs[handle].defaultMarkerSize;
-		markerSize.Y = markerSize.X;
-
-
-	}
-
-
-	UFUNCTION(BlueprintCallable, Category = "ROS")
-		static void clearGraphPoints(int32 handle)
-	{
-		gGraphs[handle].RawPoints.Empty();
-		gGraphs[handle].TranslatedPoints.Empty();
-
-
-	}
-
-	UFUNCTION(BlueprintCallable, Category = "ROS")
-		static void createDemoPoints(int32 handle)
-	{
-		//auto fg = gGraphs[handle];
-		FVector2D fv;
-
-		for (int i = -20; i <= 20; i++)
-		{
-			fv.X = i;
-			fv.Y = i;
-
-			addGraphPoint(handle, fv);
-		}
-
-	}
-
-
-	UFUNCTION(BlueprintCallable, Category = "ROS")
+	UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
 		static bool generateAxisFromID(int32 id, TArray<FVector4> &lines);
 
 
-		UFUNCTION(BlueprintCallable, Category = "ROS")
-		static bool generateAxis(int32 cellsize, int32 gridNum, float height, TArray<FVector4> &points)
-	{
-		//	const int cellsize = 20;   // 20 pixels wide/high cells. 
-		FVector4 fv;
+		UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
+		static bool generateAxis(int32 cellsize, int32 gridNum, float height, TArray<FVector4> &points);
 
-
-		int i;
-		for (i = 0; i <=gridNum; i++)
-		{
-			//	DrawLine(0, i * cellsize, gridSize * cellsize, i * cellsize);
-			//DRAW HOIZONTAL LINES , X =0 Y increases
-			fv.Z = 0;		
-			
-			if (i*cellsize <=FMath::Abs(height))
-				fv.W = i*cellsize;
-			else
-				goto skip;
-			
-			fv.X = gridNum * cellsize;
-			fv.Y = i * cellsize;
-
-			points.Add(fv);
-skip:
-			//DrawLine(i * cellsize, 0, i * cellsize, gridSize * cellsize);
-			//Draw VERTICAL , Y=0 X increases
-			fv.X = i * cellsize;
-			fv.Y = 0;
-			fv.Z = i * cellsize;
-			
-			
-			fv.W = gridNum * cellsize<=FMath::Abs(height) ? gridNum * cellsize : height;
-
-			points.Add(fv);
-
-
-
-		}
-		return true;
-	}
-
-		UFUNCTION(BlueprintCallable, Category = "ROS")
+		UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
 			static void generateGraphOffsets(float height, float width, int32 cellsize, float offsetX, float offsetY, float scaleX,
-				float scaleY, FVector4 line, FVector2D &PointA, FVector2D &PointB, FString & label)
-		{
-
-
-			PointA.X = offsetX+ line.X;
-			PointA.Y = offsetY + line.Y;
-			PointB.X = offsetX+ line.Z;
-			PointB.Y = offsetY + line.W;			
-
-
-
-
-			if (line.Y == 0 )
-			{
-				label=FString::FromInt((int32)((line.X/scaleX)));
-			}
-			else
-			{
-				label= FString::FromInt((int32)((height - line.Y)/scaleY));
-
-			
-			}
-
-		}
+				float scaleY, FVector4 line, FVector2D &PointA, FVector2D &PointB, FString & label);
 	
-		UFUNCTION(BlueprintCallable, Category = "ROS")
+		UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
 			static void generateGraphOffsetsFromID(int32 id, FVector4 line, FVector2D &PointA, FVector2D &PointB, FString & labelX,
 				FString &labelY, bool & isLabelX, FVector2D & labelPosition, bool & isOriginLine);
 
-		UFUNCTION(BlueprintCallable, Category = "ROS")
+		UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
 			static void translateGraphPoint(int32 id, float markerSize, FVector2D PointIn, FVector2D &PointOut);
 
 
 
-		UFUNCTION(BlueprintCallable, Category = "ROS")
-			static void switchStringOnBool(bool dofirst, FString first, FString second, FString & stringChosen)
+		UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
+			static void switchStringOnBool(bool dofirst, FString first, FString second, FString & stringChosen);
+
+		UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
+			static void switchColorOnBool(bool dofirst, FLinearColor first, FLinearColor second, FLinearColor & color);
+
+
+		UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
+			static void switchFloatOnBool(bool dofirst, float first, float second, float & val);
+
+
+		UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
+			static void changeGraphParm (int32 handle, EGraphParam eParam, float value, bool addValuetoExisting=true);
+
+		UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
+			static void recalcGraphTranslatedPoints(int32 handle);
+
+		UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
+			static void duplicateGraph(int32 handleFrom, int32 handleTo, int32 & handleNew, bool copyPoints=false)
 		{
 
-			stringChosen = dofirst ? first : second;
-			
-		}
+			gGraphs[handleTo] = gGraphs[handleFrom];
+			handleNew = handleTo;
 
-		UFUNCTION(BlueprintCallable, Category = "ROS")
-			static void switchColorOnBool(bool dofirst, FLinearColor first, FLinearColor second, FLinearColor & color)
-		{
-
-			color = dofirst ? first : second;
-
-		}
-
-
-		UFUNCTION(BlueprintCallable, Category = "ROS")
-			static void switchFloatOnBool(bool dofirst, float first, float second, float & val)
-		{
-
-			val = dofirst ? first : second;
-
-
-		}
-
-#define ifdo(X) X= addValetoExisting? X+=value:value
-
-		UFUNCTION(BlueprintCallable, Category = "ROS")
-			static void changeGraphParm (int32 handle, EGraphParam eParam, float value, bool addValetoExisting=true)
-		{
-				
-			FGraphData *pFg = &gGraphs[handle];
-
-			switch (eParam)
+			if (!copyPoints) //empty if not copyPoints=true;
 			{
-			case EGraphParam::SCALE_X:
-				ifdo(pFg->scaleX);
-				break;
-			case EGraphParam::SCALE_Y:
-				ifdo(pFg->scaleY);
-				break;
-			case EGraphParam::SCALE_X_AND_Y:
-				ifdo(pFg->scaleY);
-				ifdo(pFg->scaleX);
-				break;
 
-			case EGraphParam::Width:
-				ifdo(pFg->width);
-				break;
-			case EGraphParam::Height:
-				ifdo(pFg->height);
-				break;
-			case EGraphParam::OFFSET_X:
-				ifdo(pFg->offsetX);
-				
-				break;
-			case EGraphParam::OFFSET_Y:
-				ifdo(pFg->offsetY);
-				break;
-			case EGraphParam::OFFSET_X_AND_Y:
-				ifdo(pFg->offsetY);
-				ifdo(pFg->offsetX);
-				break;
-
-			case EGraphParam::OFFSETLABEL_X:
-				ifdo(pFg->offsetLabelX);
-				break;
-			case EGraphParam::OFFSETLABEL_Y:
-				ifdo(pFg->offsetLabelY);
-				break;
-			case EGraphParam::OFFSETLABEL_XY:
-				ifdo(pFg->offsetY);
-				ifdo(pFg->offsetX);
-				break;
-
-			case EGraphParam::RANGEOFFSET_X:
-				ifdo(pFg->offsetX);
-				break;
-			case EGraphParam::RANGEOFFSET_Y:
-				ifdo(pFg->offsetLabelY);
-				break;
-			case EGraphParam::RANGEOFFSET_X_AND_Y:
-				ifdo(pFg->offsetY);
-				ifdo(pFg->offsetX);
-				break;
-
-
-			case EGraphParam::DEFAULTMARKERSIZE:
-				ifdo(pFg->defaultMarkerSize);
-				break;
-			default:
-				break;
+				gGraphs[handleTo].RawPoints.Empty();
+				gGraphs[handleTo].TranslatedPoints.Empty();
 			}
 
-			recalcGraphTranslatedPoints(handle);
-			clipTranslatedPoints(handle);
+
 
 		}
-
-		UFUNCTION(BlueprintCallable, Category = "ROS")
-			static void recalcGraphTranslatedPoints(int32 handle)
+#define GR gGraphs[handle]
+		//put on event tick. will give you geometry and initialize the graph
+		//autoSize =true will make graph fill out the entire space
+		UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
+			static void refreshGraph(int32 handle, FVector2D widgetSize, bool autoSize=true)
 		{
-
-
-			FGraphData *p = &gGraphs[handle];
-			FVector2D fv;
-
-			p->TranslatedPoints.Empty();
-			for (auto a : gGraphs[handle].RawPoints)
+			if(gGraphs[handle].dirty)
 			{
 				
-				translateGraphPoint(handle,p->defaultMarkerSize, a, fv);
-				p->TranslatedPoints.Add(fv);
+				gGraphs[handle].dirty = false;
+
+				gGraphs[handle].widgetHeight = widgetSize.Y;
+				gGraphs[handle].widgetWidth = widgetSize.X;
+
+				if (autoSize)
+				{
+					GR.width=widgetSize.X;
+					GR.height=widgetSize.Y;
+
+
+				}
+
+				recalcGraphTranslatedPoints(handle);
+				clipTranslatedPoints(handle);
+
 			}
+
 		}
+
 
 
 };
