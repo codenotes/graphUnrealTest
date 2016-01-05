@@ -50,9 +50,9 @@ struct FGraphData
 	float offsetX;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
 	float offsetY;
-//	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
 	float scaleX;
-//	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
 	float scaleY;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
 		float offsetLabelX;
@@ -60,11 +60,11 @@ struct FGraphData
 		float offsetLabelY;
 
 	//for negative numbers
-//	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
 		float rangeOffsetX=0;
 
 	//for negative
-//	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
 		float rangeOffsetY=0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
@@ -113,6 +113,32 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
 		static void getGraphData(int32 handle, FGraphData & graphData);
+
+
+	UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
+		static void createGraphWithStructure(int32 handle, FGraphData graphData)
+	{
+		gGraphs[handle] = graphData;
+		recalcRanges(handle);
+
+	}
+
+	static void recalcRanges(int32 handle)
+	{
+
+		FGraphData * pFg = &gGraphs[handle];
+
+		float rangeX = FMath::Abs(pFg->maxRangeX) + FMath::Abs(pFg->minRangeX);
+		float rangeY = FMath::Abs(pFg->maxRangeY) + FMath::Abs(pFg->minRangeY);
+
+		pFg->scaleX = pFg->width / rangeX;// scaleX;// height;// scaleX;// fg.height / FMath::Abs(maxRangeX) / 2;
+		pFg->scaleY = pFg->height / rangeY;//  scaleY;// width;// scaleY; // / FMath::Abs(maxRangeY) / 2;
+		pFg->rangeOffsetX = pFg->minRangeX;
+		pFg->rangeOffsetY = pFg->minRangeY;
+
+
+
+	}
 
 
 
