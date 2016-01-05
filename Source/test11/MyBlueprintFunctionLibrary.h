@@ -50,9 +50,9 @@ struct FGraphData
 	float offsetX;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
 	float offsetY;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
+//	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
 	float scaleX;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
+//	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
 	float scaleY;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
 		float offsetLabelX;
@@ -60,11 +60,11 @@ struct FGraphData
 		float offsetLabelY;
 
 	//for negative numbers
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
+//	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
 		float rangeOffsetX=0;
 
 	//for negative
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
+//	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
 		float rangeOffsetY=0;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
