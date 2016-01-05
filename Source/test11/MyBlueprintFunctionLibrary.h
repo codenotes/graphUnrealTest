@@ -9,6 +9,16 @@
  * 
  */
 
+UENUM(BlueprintType)
+enum class EOverflowDirection: uint8
+{
+	UP,
+	DOWN,
+	LEFT,
+	RIGHT,
+	NONE
+};
+
 
 UENUM(BlueprintType)
 enum class EGraphParam : uint8
@@ -99,6 +109,8 @@ struct FGraphData
 };
 
 	extern std::map<int32, FGraphData> gGraphs;
+	extern std::map<int32, TArray<FVector2D>> gPointSets; 
+
 
 UCLASS()
 class TEST11_API UMyBlueprintFunctionLibrary : public UBlueprintFunctionLibrary
@@ -257,6 +269,119 @@ public:
 			}
 
 		}
+
+		UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
+			static void addPointToSet(int32 handle, FVector2D fv)
+		{
+			//GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::FromInt(-4));
+
+			if (gPointSets.find(handle) == gPointSets.end())
+			{
+				//GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::FromInt(-5));
+				gPointSets[handle];
+			}
+
+			gPointSets[handle].Add(fv);
+			//GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Yellow,  FString::FromInt(-6));
+
+		}
+
+		UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
+			static void clearPointSet(int32 handle)
+		{
+
+			gPointSets[handle].Empty();
+
+		}
+
+
+		
+		UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
+			static void returnPointSet(int32 handle, TArray<FVector2D> &points )
+		{
+
+			points = gPointSets[handle];
+			
+		}
+
+
+		UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
+			static void returnPointSetTranslatedPoints(int32 graphHandle, int32 pointSetHandle,
+				TArray<FVector2D> &translatedPoints, FVector2D &markerSize,
+				bool & isOverFlowUp, bool & isOverFlowDown,
+				bool& isOverFlowLeft, bool & isOverFlowRight)
+				
+				//TEnumAsByte<EOverflowDirection> & overflowDirection)
+		{
+			FVector2D pout;
+			//EOverflowDirection ev = EOverflowDirection::NONE;
+			FGraphData * pFg = &gGraphs[graphHandle];
+
+			bool up = false;
+			bool down = false;
+			bool left = false;
+			bool right = false;
+//			overflowDirection.Empty();
+	/*	LogTemp:Warning: X:20.200005 maxRange : 20.000000
+			LogTemp : Warning : X : 27.200031 maxRange : 25.000000
+			LogTemp : Warning : X : 31.200047 maxRange : 30.000000
+			LogTemp : Warning : X : 38.800076 maxRange : 35.000000*/
+
+			for (FVector2D p : gPointSets[pointSetHandle])
+			{
+				
+				
+
+				//test for overflow
+				
+				
+				if (p.X < pFg->minRangeX&&!left)
+				{
+				//	overflowDirection=EOverflowDirection::LEFT;
+					isOverFlowLeft= true;
+					left = true;
+				}
+
+				if ((p.X> pFg->maxRangeX) && !right)
+				{
+					UE_LOG(LogTemp, Warning, TEXT("X:%f maxRange:%f"), p.X, pFg->maxRangeX);
+					isOverFlowRight = true;
+					//overflowDirection = EOverflowDirection::RIGHT;
+					right = true;
+					//pFg->maxRangeX += 5;
+					//pFg->minRangeX += 5;
+	//				pFg->rangeOffsetX + 5;
+
+
+				}
+
+				if (p.Y > pFg->maxRangeY&&!up)
+				{
+					isOverFlowUp = true;
+					//overflowDirection=EOverflowDirection::UP;
+					up = true;
+				}
+				
+				if (p.Y < pFg->minRangeY&&!down)
+				{
+					isOverFlowDown = true;
+					//overflowDirection=EOverflowDirection::DOWN;
+					down = true;
+				}
+
+			
+				translateGraphPoint(graphHandle, gGraphs[graphHandle].defaultMarkerSize, p, pout);
+				
+				translatedPoints.Add(pout);
+
+
+			}
+						
+			markerSize.X = gGraphs[graphHandle].defaultMarkerSize;
+			markerSize.Y = markerSize.X;
+		}
+
+
 
 
 

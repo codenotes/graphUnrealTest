@@ -6,6 +6,8 @@
 
 
 std::map<int32, FGraphData> gGraphs;
+std::map<int32, TArray<FVector2D>> gPointSets;
+
 UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
 void UMyBlueprintFunctionLibrary::setGraphData(int32 handle, FGraphData graphData)
 {
@@ -194,11 +196,16 @@ UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
 void UMyBlueprintFunctionLibrary::returnGraphTranslatedPoints(int32 handle, TArray<FVector2D> &translatedPoints, FVector2D &markerSize)
 {
 	
-
 	translatedPoints = gGraphs[handle].TranslatedPoints;
 	markerSize.X = gGraphs[handle].defaultMarkerSize;
 	markerSize.Y = markerSize.X;
+
+	
+
 }
+
+
+
 UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
 void UMyBlueprintFunctionLibrary::clearGraphPoints(int32 handle)
 {
@@ -358,15 +365,19 @@ void UMyBlueprintFunctionLibrary::generateGraphOffsetsFromID(int32 id, FVector4 
 
 	//UE_LOG(LogTemp, Warning, TEXT("START OFFSETS"));
 
-	int32 ylevel = (int32)((fg.height - line.Y) / fg.scaleY) + fg.rangeOffsetY;
-	int32 xlevel = (int32)((line.X) / fg.scaleX) + fg.rangeOffsetX;
 
+	float ylevel = ((fg.height - line.Y) / fg.scaleY) + fg.rangeOffsetY;
+	float xlevel = ((line.X) / fg.scaleX) + fg.rangeOffsetX;
+
+	ylevel= roundf(ylevel * 100) / 100;
+	xlevel = roundf(xlevel * 100) / 100;
+	//GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::White, FString::Fromf());
 	//if the position 
 
 	//X Y Z W = X Y Z=X2 W=Y2
 	if (line.Y == 0 && line.Z != 0 || line.X==0 && line.W==fg.height) //X label
 	{
-		labelX = FString::FromInt(xlevel);
+		labelX = FString::SanitizeFloat(xlevel);
 		isLabelX = true;
 		/*	labelPosition.X = PointB.X;
 			labelPosition.Y = PointB.Y + fg.offsetLabelX*fg.cellsize;*/
@@ -379,7 +390,7 @@ void UMyBlueprintFunctionLibrary::generateGraphOffsetsFromID(int32 id, FVector4 
 	else //Y Label
 	{
 		float numHlines = fg.height / fg.cellsize;
-		labelY = FString::FromInt(ylevel);
+		labelY = FString::SanitizeFloat(ylevel);
 		//	GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::FromInt(line.Y));
 		//	labelY = FString::FromInt((int32)((line.Y)));
 		isLabelX = false;
@@ -547,9 +558,9 @@ void UMyBlueprintFunctionLibrary::changeGraphParm(int32 handle, EGraphParam ePar
 	recalcRanges( handle);
 	//end routines.  Likely unnecessary for most changes, but doesnt hurt to have these there. 
 
-
-	recalcGraphTranslatedPoints(handle);
-	clipTranslatedPoints(handle);
+	//TODO...change these since we use pointsets now.
+	//recalcGraphTranslatedPoints(handle);
+	//clipTranslatedPoints(handle);
 }
 UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
 void UMyBlueprintFunctionLibrary::recalcGraphTranslatedPoints(int32 handle)
