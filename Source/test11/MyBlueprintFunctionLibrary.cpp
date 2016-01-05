@@ -361,7 +361,10 @@ void UMyBlueprintFunctionLibrary::generateGraphOffsetsFromID(int32 id, FVector4 
 	int32 ylevel = (int32)((fg.height - line.Y) / fg.scaleY) + fg.rangeOffsetY;
 	int32 xlevel = (int32)((line.X) / fg.scaleX) + fg.rangeOffsetX;
 
-	if (line.Y == 0 && line.Z != 0) //X label
+	//if the position 
+
+	//X Y Z W = X Y Z=X2 W=Y2
+	if (line.Y == 0 && line.Z != 0 || line.X==0 && line.W==fg.height) //X label
 	{
 		labelX = FString::FromInt(xlevel);
 		isLabelX = true;
