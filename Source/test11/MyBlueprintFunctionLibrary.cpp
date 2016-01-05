@@ -524,9 +524,35 @@ void UMyBlueprintFunctionLibrary::changeGraphParm(int32 handle, EGraphParam ePar
 	case EGraphParam::DEFAULTMARKERSIZE:
 		ifdo(pFg->defaultMarkerSize);
 		break;
+
+
+	case EGraphParam::MIN_RANGE_X:
+		ifdo(pFg->minRangeX);
+		break;
+	case EGraphParam::MAX_RANGE_X:
+		ifdo(pFg->maxRangeX);
+		break;
+	case EGraphParam::MIN_RANGE_Y:
+		ifdo(pFg->minRangeY);
+		break;
+	case EGraphParam::MAX_RANGE_Y:
+		ifdo(pFg->maxRangeY);
+		break;
+
 	default:
 		break;
 	}
+
+	//run the routines from createGraph to recalc the axis in case a range has changed	
+	float rangeX = FMath::Abs(pFg->maxRangeX) + FMath::Abs(pFg->minRangeX);
+	float rangeY = FMath::Abs(pFg->maxRangeY) + FMath::Abs(pFg->minRangeY);
+
+	pFg->scaleX = pFg->width / rangeX;// scaleX;// height;// scaleX;// fg.height / FMath::Abs(maxRangeX) / 2;
+	pFg->scaleY = pFg->height / rangeY;//  scaleY;// width;// scaleY; // / FMath::Abs(maxRangeY) / 2;
+	pFg->rangeOffsetX = pFg->minRangeX;
+	pFg->rangeOffsetY = pFg->minRangeY;
+	//end routines.  Likely unnecessary for most changes, but doesnt hurt to have these there. 
+
 
 	recalcGraphTranslatedPoints(handle);
 	clipTranslatedPoints(handle);
@@ -544,4 +570,12 @@ void UMyBlueprintFunctionLibrary::recalcGraphTranslatedPoints(int32 handle)
 		translateGraphPoint(handle, p->defaultMarkerSize, a, fv);
 		p->TranslatedPoints.Add(fv);
 	}
+
+
+
+
+
+
+
+
 }
