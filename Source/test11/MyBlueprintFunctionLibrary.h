@@ -104,7 +104,8 @@ struct FGraphData
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ROS_GRAPH")
 	float maxRangeY;
 
-
+	float cellLengthX;
+	float cellHeightY;
 
 };
 
@@ -140,8 +141,12 @@ public:
 
 		FGraphData * pFg = &gGraphs[handle];
 
-		float rangeX = FMath::Abs(pFg->maxRangeX) + FMath::Abs(pFg->minRangeX);
-		float rangeY = FMath::Abs(pFg->maxRangeY) + FMath::Abs(pFg->minRangeY);
+		//float rangeX = FMath::Abs(pFg->maxRangeX) + FMath::Abs(pFg->minRangeX);
+		//float rangeY = FMath::Abs(pFg->maxRangeY) + FMath::Abs(pFg->minRangeY);
+
+		float rangeX = FMath::Abs(pFg->maxRangeX) - FMath::Abs(pFg->minRangeX);
+		float rangeY = FMath::Abs(pFg->maxRangeY) - FMath::Abs(pFg->minRangeY);
+
 
 		pFg->scaleX = pFg->width / rangeX;// scaleX;// height;// scaleX;// fg.height / FMath::Abs(maxRangeX) / 2;
 		pFg->scaleY = pFg->height / rangeY;//  scaleY;// width;// scaleY; // / FMath::Abs(maxRangeY) / 2;
@@ -344,12 +349,30 @@ public:
 
 				if ((p.X> pFg->maxRangeX) && !right)
 				{
-					UE_LOG(LogTemp, Warning, TEXT("X:%f maxRange:%f"), p.X, pFg->maxRangeX);
+				//	UE_LOG(LogTemp, Warning, TEXT("X:%f maxRange:%f"), p.X, pFg->maxRangeX);
 					isOverFlowRight = true;
 					//overflowDirection = EOverflowDirection::RIGHT;
 					right = true;
-					//pFg->maxRangeX += 5;
+				//	pFg->maxRangeX += 5;
 					//pFg->minRangeX += 5;
+				
+					/*createGraph(graphHandle,
+						pFg->height,
+						pFg->width,
+						pFg->cellsize,
+						pFg->offsetX,
+						pFg->offsetY,
+						pFg->rangeOffsetX,
+						pFg->rangeOffsetY,
+						pFg->offsetLabelX,
+						pFg->offsetLabelY,
+						pFg->defaultMarkerSize,
+						pFg->minRangeX,
+						pFg->maxRangeX,
+						pFg->minRangeX,
+						pFg->maxRangeY);
+*/
+
 	//				pFg->rangeOffsetX + 5;
 
 
@@ -381,6 +404,214 @@ public:
 			markerSize.Y = markerSize.X;
 		}
 
+		UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
+			static bool generateAxisFromID2(int32 id, TArray<FVector4> &lines)
+		{
+			//	const int cellsize = 20;   // 20 pixels wide/high cells. 
+			FVector4 fv;
+			FGraphData fg;
+
+			fg = gGraphs[id]; //TODO test for valid key
+			
+			float Xrange = fg.maxRangeX - fg.minRangeX;
+			float Yrange = fg.maxRangeY - fg.minRangeY;
+			
+			//assume 10 -0 = 10
+			//10 lines after the origin, 11 in total
+			int nVXlines = Xrange;
+			fg.cellsize = ceil(fg.width / (float)nVXlines);
+			
+			fg.cellLengthX = fg.width / (float)nVXlines;
+
+			//fg.scaleX = (float)nVXlines / fg.width / (float)fg.cellsize; // ||
+			int nHYlines =  Yrange;
+			fg.cellHeightY = (int)(fg.height / (float)nHYlines) ;// = //TEMPORARY!
+
+			UE_LOG(LogTemp, Warning, TEXT("nvx:%d nhy:%d xrange:%f yrange:%f, cellsizeX:%d, cellsizeY:%f, width:%f, height:%f"), nVXlines,nHYlines,
+				Xrange,Yrange, fg.cellLengthX, fg.cellHeightY,fg.width, fg.height);
+
+			int i = 0;
+			for (i = 0; i <= nVXlines; i++)// ||
+			{
+
+				fv.X = i * fg.cellLengthX;
+				fv.Y = 0;
+				fv.Z = i * fg.cellLengthX;
+				fv.W = fg.height;// gridNum * fg.cellsize <= FMath::Abs(fg.height) ? gridNum * fg.cellsize : fg.height;
+		//		UE_LOG(LogTemp, Warning, TEXT("->X:%f Y:%f z:%f W:%f"), fv.X, fv.Y, fv.Z, fv.W);
+				lines.Add(fv);
+
+			}
+
+
+			for (i = 0; i <=nHYlines; i++) // =
+			{
+
+				//draws frim right to left <----
+				fv.X = fg.width;// i * tempcellsize ; // just width.
+				fv.Y = i * fg.cellHeightY;
+
+				//.Z is where I start relative to Left side...it is the left boundary
+				fv.Z = 0; //z= endpoint Y, if endpoint Y=0 then this is along the X AXIS
+				fv.W = i*fg.cellHeightY ; //really endpoint.X W=X
+		
+				
+				//GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Yellow,  FString::FromInt(fv.Y));
+
+
+				lines.Add(fv);
+
+
+			}
+
+			UE_LOG(LogTemp, Warning, TEXT("****************"));
+			return true;
+			
+			
+			int gridNum = (int)((fg.width) / fg.cellsize);
+			int numHlines = fg.height / fg.cellsize;
+
+			//gridum = 1000/100 = 100
+			//numH = 500/100 =  5
+		//	int i;
+			for (i = 0; i <= gridNum; i++)
+			{
+				//	DrawLine(0, i * cellsize, gridSize * cellsize, i * cellsize);
+				//DRAW HOIZONTAL LINES , X =0 Y increases
+				fv.Z = 0; //z= endpoint Y, if endpoint Y=0 then this is along the X AXIS
+
+						  //if (i*fg.cellsize <= FMath::Abs(fg.height))
+				if (i <= numHlines)
+					fv.W = i*fg.cellsize; //really endpoint.X W=X
+				else
+					goto skip;
+
+				fv.X = gridNum * fg.cellsize; // just width.
+				fv.Y = i * fg.cellsize;
+
+				//GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Yellow,  FString::FromInt(fv.Y));
+
+
+				lines.Add(fv);
+			skip:
+				//DrawLine(i * cellsize, 0, i * cellsize, gridSize * cellsize);
+				//Draw VERTICAL , Y=0 X increases
+				fv.X = i * fg.cellsize;
+				fv.Y = 0;
+				fv.Z = i * fg.cellsize;
+
+				//UE_LOG(LogTemp, Warning, TEXT("X:%f Y:%f z:%f W:%f"), fv.X, fv.Y, fv.Z, fv.W);
+
+
+				fv.W = gridNum * fg.cellsize <= FMath::Abs(fg.height) ? gridNum * fg.cellsize : fg.height;
+
+
+				lines.Add(fv);
+
+
+
+			}
+
+			return true;
+		}
+
+
+		UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
+			static void generateGraphOffsetsFromID2(int32 id, FVector4 line, FVector2D &PointA, FVector2D &PointB, FString & labelX,
+				FString &labelY, bool & isLabelX, FVector2D & labelPosition, bool & isOriginLine)
+		{
+			FGraphData fg;
+
+			fg = gGraphs[id];
+
+			PointA.X = fg.offsetX + line.X;
+			PointA.Y = fg.offsetY + line.Y;
+			PointB.X = fg.offsetX + line.Z;
+			PointB.Y = fg.offsetY + line.W;
+
+			isOriginLine = false;
+
+			//below just indicates the boundary of graph
+			//if ((line.X == 0 && line.W == 0) || (line.Y == 0 && line.Z == 0))
+			//	isOriginLine = true;
+
+			//UE_LOG(LogTemp, Warning, TEXT("START OFFSETS"));
+
+
+			float ylevel = ((fg.height - line.Y) / fg.scaleY) + fg.rangeOffsetY;
+			float xlevel = ((line.X) / fg.scaleX) + fg.rangeOffsetX;
+
+			ylevel = roundf(ylevel * 100) / 100;
+			xlevel = roundf(xlevel * 100) / 100;
+			//GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::White, FString::Fromf());
+			//if the position 
+
+			//X Y Z W = X Y Z=X2 W=Y2
+			if (line.Y == 0 && line.Z != 0 || line.X == 0 && line.W == fg.height) //X label
+			{
+				labelX = FString::SanitizeFloat(xlevel);
+				isLabelX = true;
+				/*	labelPosition.X = PointB.X;
+				labelPosition.Y = PointB.Y + fg.offsetLabelX*fg.cellsize;*/
+				if (labelX == "0")
+					isOriginLine = true;
+
+
+				//		GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::White, FString::FromInt(line.X));
+			}
+			else //Y Label
+			{
+				float numHlines = fg.height / fg.cellsize;
+				labelY = FString::SanitizeFloat(ylevel);
+				//	GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::FromInt(line.Y));
+				//	labelY = FString::FromInt((int32)((line.Y)));
+				isLabelX = false;
+				if (labelY == "0")
+					isOriginLine = true;
+
+
+			}
+
+#ifdef LOGIT
+			//if (ylevel == 40 )
+			//{
+			FString f = FString::Printf(TEXT("TYPE:%s, xlev:%d ylev:%d posx:%f posy:%f"), isLabelX ? TEXT("XLABEL") : TEXT("YLABEL"), xlevel, ylevel, labelPosition.X, labelPosition.Y);
+			//UE_LOG(LogTemp, Warning, TEXT("%s"), *f);
+			//}
+#endif
+
+			//to prevent overlapp at the LL corner of text
+			float cornerYOffset = 0;
+			float cornerXOffset = 0;
+
+
+
+			//is this the LL corner of Y
+			if (ylevel == fg.minRangeY && !isLabelX)
+			{
+				cornerYOffset = 0;
+				cornerXOffset = -25;
+				//just get rig of the label
+				//	labelY = "";
+			}
+
+			//if(line.X==line.Y==0 && isLabelX) 
+			//{
+			//	//GEngine->AddOnScreenDebugMessage(-1, 2, FColor::Red, FString::FromInt(xlevel));
+			////	cornerYOffset = 0;
+			////	cornerXOffset = -20 -20;
+			//	labelX.AppendChar(U'*');
+
+			//}
+			//	
+
+
+			labelPosition.Y = PointB.Y + fg.offsetLabelY*fg.cellsize + cornerYOffset;
+			labelPosition.X = PointB.X + fg.offsetLabelX*fg.cellsize + cornerXOffset;
+
+
+			//generateGraphOffsets(fg.height, fg.width, fg.cellsize, fg.offsetX, fg.offsetY, fg.scaleX, fg.scaleY, line, PointA, PointB, label);
+		}
 
 
 

@@ -45,14 +45,20 @@ void UMyBlueprintFunctionLibrary::createGraph(int32 id, float height, float widt
 	fg.width = width;
 
 
-	
+	//greg1
+	//float rangeX = FMath::Abs(maxRangeX) + FMath::Abs(minRangeX);
+	//float rangeY = FMath::Abs(maxRangeY) + FMath::Abs(minRangeY);
+	//fg.scaleX = width / rangeX;// scaleX;// height;// scaleX;// fg.height / FMath::Abs(maxRangeX) / 2;
+	//fg.scaleY = height / rangeY;//  scaleY;// width;// scaleY; // / FMath::Abs(maxRangeY) / 2;
+	//fg.rangeOffsetX =  minRangeX;
+	//fg.rangeOffsetY =  minRangeY;
+
 	float rangeX = FMath::Abs(maxRangeX) + FMath::Abs(minRangeX);
 	float rangeY = FMath::Abs(maxRangeY) + FMath::Abs(minRangeY);
 	fg.scaleX = width / rangeX;// scaleX;// height;// scaleX;// fg.height / FMath::Abs(maxRangeX) / 2;
 	fg.scaleY = height / rangeY;//  scaleY;// width;// scaleY; // / FMath::Abs(maxRangeY) / 2;
 	fg.rangeOffsetX =  minRangeX;
 	fg.rangeOffsetY =  minRangeY;
-	
 
 
 	
@@ -234,24 +240,30 @@ bool UMyBlueprintFunctionLibrary::generateAxisFromID(int32 id, TArray<FVector4> 
 	FGraphData fg;
 
 	fg = gGraphs[id]; //TODO test for valid key
-	int gridNum = (int)(fg.width / fg.cellsize);
+	int gridNum = (int)((fg.width ) / fg.cellsize);
 	int numHlines = fg.height / fg.cellsize;
 	
+	//gridum = 1000/100 = 100
+	//numH = 500/100 =  5
+
+
+
+
 
 	int i;
 	for (i = 0; i <= gridNum; i++)
 	{
 		//	DrawLine(0, i * cellsize, gridSize * cellsize, i * cellsize);
 		//DRAW HOIZONTAL LINES , X =0 Y increases
-		fv.Z = 0;
+		fv.Z = 0; //z= endpoint Y, if endpoint Y=0 then this is along the X AXIS
 
 		//if (i*fg.cellsize <= FMath::Abs(fg.height))
 		if (i <= numHlines)
-			fv.W = i*fg.cellsize;
+			fv.W = i*fg.cellsize; //really endpoint.X W=X
 		else
 			goto skip;
 
-		fv.X = gridNum * fg.cellsize;
+		fv.X = gridNum * fg.cellsize; // just width.
 		fv.Y = i * fg.cellsize;
 
 		//GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Yellow,  FString::FromInt(fv.Y));
@@ -265,6 +277,8 @@ bool UMyBlueprintFunctionLibrary::generateAxisFromID(int32 id, TArray<FVector4> 
 		fv.Y = 0;
 		fv.Z = i * fg.cellsize;
 
+		UE_LOG(LogTemp, Warning, TEXT("X:%f Y:%f z:%f W:%f"), fv.X, fv.Y,fv.Z,fv.W);
+
 
 		fv.W = gridNum * fg.cellsize <= FMath::Abs(fg.height) ? gridNum * fg.cellsize : fg.height;
 		
@@ -274,6 +288,7 @@ bool UMyBlueprintFunctionLibrary::generateAxisFromID(int32 id, TArray<FVector4> 
 
 
 	}
+#define LOGIT
 #ifdef LOGIT
 	UE_LOG(LogTemp, Warning, TEXT("---"));
 #endif
@@ -364,10 +379,16 @@ void UMyBlueprintFunctionLibrary::generateGraphOffsetsFromID(int32 id, FVector4 
 	//	isOriginLine = true;
 
 	//UE_LOG(LogTemp, Warning, TEXT("START OFFSETS"));
-
-
+#define ORIGINAL
+#ifdef ORIGINAL
 	float ylevel = ((fg.height - line.Y) / fg.scaleY) + fg.rangeOffsetY;
 	float xlevel = ((line.X) / fg.scaleX) + fg.rangeOffsetX;
+	
+#else
+	float ylevel = ((fg.height - line.Y)/fg.scaleY);
+	float xlevel = ((line.X)/fg.scaleX ) ;
+
+#endif
 
 	ylevel= roundf(ylevel * 100) / 100;
 	xlevel = roundf(xlevel * 100) / 100;
@@ -389,7 +410,7 @@ void UMyBlueprintFunctionLibrary::generateGraphOffsetsFromID(int32 id, FVector4 
 	}
 	else //Y Label
 	{
-		float numHlines = fg.height / fg.cellsize;
+		//float numHlines = fg.height / fg.cellsize;
 		labelY = FString::SanitizeFloat(ylevel);
 		//	GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::FromInt(line.Y));
 		//	labelY = FString::FromInt((int32)((line.Y)));
@@ -404,7 +425,7 @@ void UMyBlueprintFunctionLibrary::generateGraphOffsetsFromID(int32 id, FVector4 
 	//if (ylevel == 40 )
 	//{
 		FString f=FString::Printf(TEXT("TYPE:%s, xlev:%d ylev:%d posx:%f posy:%f"),  isLabelX?TEXT("XLABEL"):TEXT("YLABEL"),         xlevel, ylevel,  labelPosition.X, labelPosition.Y);
-		UE_LOG(LogTemp, Warning, TEXT("%s"), *f);
+		//UE_LOG(LogTemp, Warning, TEXT("%s"), *f);
 	//}
 #endif
 
@@ -433,10 +454,14 @@ void UMyBlueprintFunctionLibrary::generateGraphOffsetsFromID(int32 id, FVector4 
 	//}
 	//	
 
-
+#ifdef ORIGINAL
 	labelPosition.Y = PointB.Y + fg.offsetLabelY*fg.cellsize +cornerYOffset;
 	labelPosition.X = PointB.X + fg.offsetLabelX*fg.cellsize +cornerXOffset;
-	
+#else
+	labelPosition.Y = PointB.Y + fg.offsetLabelY*fg.cellHeightY + cornerYOffset;
+	labelPosition.X = PointB.X + fg.offsetLabelX*fg.cellLengthX + cornerXOffset;
+
+#endif
 
 	//generateGraphOffsets(fg.height, fg.width, fg.cellsize, fg.offsetX, fg.offsetY, fg.scaleX, fg.scaleY, line, PointA, PointB, label);
 }
@@ -555,7 +580,7 @@ void UMyBlueprintFunctionLibrary::changeGraphParm(int32 handle, EGraphParam ePar
 	}
 
 	//run the routines from createGraph to recalc the axis in case a range has changed	
-	recalcRanges( handle);
+	//recalcRanges( handle);
 	//end routines.  Likely unnecessary for most changes, but doesnt hurt to have these there. 
 
 	//TODO...change these since we use pointsets now.
