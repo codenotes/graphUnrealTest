@@ -208,7 +208,7 @@ public:
 				FString &labelY, bool & isLabelX, FVector2D & labelPosition, bool & isOriginLine);
 
 		UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
-			static void translateGraphPoint(int32 id, float markerSize, FVector2D PointIn, FVector2D &PointOut);
+			static bool translateGraphPoint(int32 id, float markerSize, FVector2D PointIn, FVector2D &PointOut);
 
 
 
@@ -314,206 +314,12 @@ public:
 			static void returnPointSetTranslatedPoints(int32 graphHandle, int32 pointSetHandle,
 				TArray<FVector2D> &translatedPoints, FVector2D &markerSize,
 				bool & isOverFlowUp, bool & isOverFlowDown,
-				bool& isOverFlowLeft, bool & isOverFlowRight)
+				bool& isOverFlowLeft, bool & isOverFlowRight);
 				
 				//TEnumAsByte<EOverflowDirection> & overflowDirection)
-		{
-			FVector2D pout;
-			//EOverflowDirection ev = EOverflowDirection::NONE;
-			FGraphData * pFg = &gGraphs[graphHandle];
-
-			bool up = false;
-			bool down = false;
-			bool left = false;
-			bool right = false;
-//			overflowDirection.Empty();
-	/*	LogTemp:Warning: X:20.200005 maxRange : 20.000000
-			LogTemp : Warning : X : 27.200031 maxRange : 25.000000
-			LogTemp : Warning : X : 31.200047 maxRange : 30.000000
-			LogTemp : Warning : X : 38.800076 maxRange : 35.000000*/
-
-			for (FVector2D p : gPointSets[pointSetHandle])
-			{
-				
-				
-
-				//test for overflow
-				
-				
-				if (p.X < pFg->minRangeX&&!left)
-				{
-				//	overflowDirection=EOverflowDirection::LEFT;
-					isOverFlowLeft= true;
-					left = true;
-				}
-
-				if ((p.X> pFg->maxRangeX) && !right)
-				{
-				//	UE_LOG(LogTemp, Warning, TEXT("X:%f maxRange:%f"), p.X, pFg->maxRangeX);
-					isOverFlowRight = true;
-					//overflowDirection = EOverflowDirection::RIGHT;
-					right = true;
-				//	pFg->maxRangeX += 5;
-					//pFg->minRangeX += 5;
-				
-					/*createGraph(graphHandle,
-						pFg->height,
-						pFg->width,
-						pFg->cellsize,
-						pFg->offsetX,
-						pFg->offsetY,
-						pFg->rangeOffsetX,
-						pFg->rangeOffsetY,
-						pFg->offsetLabelX,
-						pFg->offsetLabelY,
-						pFg->defaultMarkerSize,
-						pFg->minRangeX,
-						pFg->maxRangeX,
-						pFg->minRangeX,
-						pFg->maxRangeY);
-*/
-
-	//				pFg->rangeOffsetX + 5;
-
-
-				}
-
-				if (p.Y > pFg->maxRangeY&&!up)
-				{
-					isOverFlowUp = true;
-					//overflowDirection=EOverflowDirection::UP;
-					up = true;
-				}
-				
-				if (p.Y < pFg->minRangeY&&!down)
-				{
-					isOverFlowDown = true;
-					//overflowDirection=EOverflowDirection::DOWN;
-					down = true;
-				}
-
-			
-				translateGraphPoint(graphHandle, gGraphs[graphHandle].defaultMarkerSize, p, pout);
-				
-				translatedPoints.Add(pout);
-
-
-			}
-						
-			markerSize.X = gGraphs[graphHandle].defaultMarkerSize;
-			markerSize.Y = markerSize.X;
-		}
 
 		UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
-			static bool generateAxisFromID2(int32 id, TArray<FVector4> &lines)
-		{
-			//	const int cellsize = 20;   // 20 pixels wide/high cells. 
-			FVector4 fv;
-			FGraphData fg;
-
-			fg = gGraphs[id]; //TODO test for valid key
-			
-			float Xrange = fg.maxRangeX - fg.minRangeX;
-			float Yrange = fg.maxRangeY - fg.minRangeY;
-			
-			//assume 10 -0 = 10
-			//10 lines after the origin, 11 in total
-			int nVXlines = Xrange;
-			fg.cellsize = ceil(fg.width / (float)nVXlines);
-			
-			fg.cellLengthX = fg.width / (float)nVXlines;
-
-			//fg.scaleX = (float)nVXlines / fg.width / (float)fg.cellsize; // ||
-			int nHYlines =  Yrange;
-			fg.cellHeightY = (int)(fg.height / (float)nHYlines) ;// = //TEMPORARY!
-
-			UE_LOG(LogTemp, Warning, TEXT("nvx:%d nhy:%d xrange:%f yrange:%f, cellsizeX:%d, cellsizeY:%f, width:%f, height:%f"), nVXlines,nHYlines,
-				Xrange,Yrange, fg.cellLengthX, fg.cellHeightY,fg.width, fg.height);
-
-			int i = 0;
-			for (i = 0; i <= nVXlines; i++)// ||
-			{
-
-				fv.X = i * fg.cellLengthX;
-				fv.Y = 0;
-				fv.Z = i * fg.cellLengthX;
-				fv.W = fg.height;// gridNum * fg.cellsize <= FMath::Abs(fg.height) ? gridNum * fg.cellsize : fg.height;
-		//		UE_LOG(LogTemp, Warning, TEXT("->X:%f Y:%f z:%f W:%f"), fv.X, fv.Y, fv.Z, fv.W);
-				lines.Add(fv);
-
-			}
-
-
-			for (i = 0; i <=nHYlines; i++) // =
-			{
-
-				//draws frim right to left <----
-				fv.X = fg.width;// i * tempcellsize ; // just width.
-				fv.Y = i * fg.cellHeightY;
-
-				//.Z is where I start relative to Left side...it is the left boundary
-				fv.Z = 0; //z= endpoint Y, if endpoint Y=0 then this is along the X AXIS
-				fv.W = i*fg.cellHeightY ; //really endpoint.X W=X
-		
-				
-				//GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Yellow,  FString::FromInt(fv.Y));
-
-
-				lines.Add(fv);
-
-
-			}
-
-			UE_LOG(LogTemp, Warning, TEXT("****************"));
-			return true;
-			
-			
-			int gridNum = (int)((fg.width) / fg.cellsize);
-			int numHlines = fg.height / fg.cellsize;
-
-			//gridum = 1000/100 = 100
-			//numH = 500/100 =  5
-		//	int i;
-			for (i = 0; i <= gridNum; i++)
-			{
-				//	DrawLine(0, i * cellsize, gridSize * cellsize, i * cellsize);
-				//DRAW HOIZONTAL LINES , X =0 Y increases
-				fv.Z = 0; //z= endpoint Y, if endpoint Y=0 then this is along the X AXIS
-
-						  //if (i*fg.cellsize <= FMath::Abs(fg.height))
-				if (i <= numHlines)
-					fv.W = i*fg.cellsize; //really endpoint.X W=X
-				else
-					goto skip;
-
-				fv.X = gridNum * fg.cellsize; // just width.
-				fv.Y = i * fg.cellsize;
-
-				//GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Yellow,  FString::FromInt(fv.Y));
-
-
-				lines.Add(fv);
-			skip:
-				//DrawLine(i * cellsize, 0, i * cellsize, gridSize * cellsize);
-				//Draw VERTICAL , Y=0 X increases
-				fv.X = i * fg.cellsize;
-				fv.Y = 0;
-				fv.Z = i * fg.cellsize;
-
-				//UE_LOG(LogTemp, Warning, TEXT("X:%f Y:%f z:%f W:%f"), fv.X, fv.Y, fv.Z, fv.W);
-
-
-				fv.W = gridNum * fg.cellsize <= FMath::Abs(fg.height) ? gridNum * fg.cellsize : fg.height;
-
-
-				lines.Add(fv);
-
-
-
-			}
-
-			return true;
-		}
+			static bool generateAxisFromID2(int32 id, TArray<FVector4> &lines);
 
 
 		UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
@@ -613,6 +419,15 @@ public:
 			//generateGraphOffsets(fg.height, fg.width, fg.cellsize, fg.offsetX, fg.offsetY, fg.scaleX, fg.scaleY, line, PointA, PointB, label);
 		}
 
+
+		UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
+		static bool isClippedPoint(int32 graphHandle, FVector2D PointIn)
+		{
+
+			FGraphData * pFg = &gGraphs[graphHandle];
+			return (PointIn.X < pFg->minRangeX || (PointIn.X> pFg->maxRangeX) || (PointIn.Y > pFg->maxRangeY) || (PointIn.Y < pFg->minRangeY));
+
+		}
 
 
 

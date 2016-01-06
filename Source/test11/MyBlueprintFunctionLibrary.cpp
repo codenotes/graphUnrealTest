@@ -379,14 +379,17 @@ void UMyBlueprintFunctionLibrary::generateGraphOffsetsFromID(int32 id, FVector4 
 	//	isOriginLine = true;
 
 	//UE_LOG(LogTemp, Warning, TEXT("START OFFSETS"));
-#define ORIGINAL
+//#define ORIGINAL
 #ifdef ORIGINAL
 	float ylevel = ((fg.height - line.Y) / fg.scaleY) + fg.rangeOffsetY;
 	float xlevel = ((line.X) / fg.scaleX) + fg.rangeOffsetX;
 	
 #else
-	float ylevel = ((fg.height - line.Y)/fg.scaleY);
-	float xlevel = ((line.X)/fg.scaleX ) ;
+
+
+
+	float ylevel = ((fg.height - line.Y)/fg.scaleY  - fg.maxRangeY );
+	float xlevel = line.X/fg.cellLengthX + fg.minRangeX ;
 
 #endif
 
@@ -398,6 +401,7 @@ void UMyBlueprintFunctionLibrary::generateGraphOffsetsFromID(int32 id, FVector4 
 	//X Y Z W = X Y Z=X2 W=Y2
 	if (line.Y == 0 && line.Z != 0 || line.X==0 && line.W==fg.height) //X label
 	{
+//		UE_LOG(LogTemp, Error, TEXT("linex:%f maxrangex:%f scalex:%f"), line.X, fg.maxRangeX, fg.scaleX);
 		labelX = FString::SanitizeFloat(xlevel);
 		isLabelX = true;
 		/*	labelPosition.X = PointB.X;
@@ -424,7 +428,7 @@ void UMyBlueprintFunctionLibrary::generateGraphOffsetsFromID(int32 id, FVector4 
 #ifdef LOGIT
 	//if (ylevel == 40 )
 	//{
-		FString f=FString::Printf(TEXT("TYPE:%s, xlev:%d ylev:%d posx:%f posy:%f"),  isLabelX?TEXT("XLABEL"):TEXT("YLABEL"),         xlevel, ylevel,  labelPosition.X, labelPosition.Y);
+//		FString f=FString::Printf(TEXT("TYPE:%s, xlev:%d ylev:%d posx:%f posy:%f"),  isLabelX?TEXT("XLABEL"):TEXT("YLABEL"),         xlevel, ylevel,  labelPosition.X, labelPosition.Y);
 		//UE_LOG(LogTemp, Warning, TEXT("%s"), *f);
 	//}
 #endif
@@ -467,9 +471,37 @@ void UMyBlueprintFunctionLibrary::generateGraphOffsetsFromID(int32 id, FVector4 
 }
 
 UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
-void UMyBlueprintFunctionLibrary::translateGraphPoint(int32 id, float markerSize, FVector2D PointIn, FVector2D &PointOut)
+bool UMyBlueprintFunctionLibrary::translateGraphPoint(int32 id, float markerSize, FVector2D PointIn, FVector2D &PointOut)
 {
 
+	FGraphData * pFg = &gGraphs[id];
+
+	//below, windowed offset
+	float woffsetX = FMath::Abs(pFg->maxRangeX - pFg->minRangeX)*pFg->cellLengthX;
+	float woffsetY = FMath::Abs(pFg->maxRangeY - pFg->minRangeY)* pFg->cellHeightY;
+
+	//UE_LOG(LogTemp, Warning, TEXT("X:%f < minrangeX:%f, X:%f > maxrangeX:%f, Y:%f < minrangeY:%f, Y:%f > maxrangeY:%f"), PointIn.X, pFg->minRangeX, PointIn.X, pFg->maxRangeX, PointIn.Y, pFg->maxRangeY, PointIn.Y, pFg->minRangeY);
+
+
+	//get rid of anything not viewable, ie outside the graph area
+	if (PointIn.X < pFg->minRangeX || (PointIn.X> pFg->maxRangeX) || (PointIn.Y > pFg->maxRangeY) || (PointIn.Y < pFg->minRangeY))
+	{
+	//	GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString("Out of bounds"));
+		//return false;
+	}
+
+
+
+	//4.7
+	//height doesn't need multiplier since it is already in screen units.
+	PointOut.X = (PointIn.X)*pFg->cellLengthX + pFg->offsetX*pFg->cellLengthX - pFg->cellLengthX*pFg->minRangeX; 
+	PointOut.Y = pFg->height + pFg->minRangeY*pFg->cellHeightY - PointIn.Y*pFg->cellHeightY;// -pFg->cellHeightY*pFg->minRangeY;// +pFg->offsetY*pFg->cellHeightY;
+
+//	UE_LOG(LogTemp, Warning, TEXT("INX:%f INY:%f OUTX:%f OUTY:%f"), PointIn.X, PointIn.Y, PointOut.X, PointOut.Y);
+	return true;
+
+	//MOTHBALL all the below
+	/* 
 	FGraphData fg = gGraphs[id];
 
 
@@ -479,6 +511,7 @@ void UMyBlueprintFunctionLibrary::translateGraphPoint(int32 id, float markerSize
 	//GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::FromInt(PointIn.Y));
 	//GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Green, FString::FromInt(PointIn.X));
 	//GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::White, FString::FromInt(fg.height));
+	*/
 }
 UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
 void UMyBlueprintFunctionLibrary::switchStringOnBool(bool dofirst, FString first, FString second, FString & stringChosen)
@@ -597,8 +630,14 @@ void UMyBlueprintFunctionLibrary::recalcGraphTranslatedPoints(int32 handle)
 	for (auto a : gGraphs[handle].RawPoints)
 	{
 
-		translateGraphPoint(handle, p->defaultMarkerSize, a, fv);
-		p->TranslatedPoints.Add(fv);
+		if (translateGraphPoint(handle, p->defaultMarkerSize, a, fv))
+		{
+			p->TranslatedPoints.Add(fv);
+		}
+		{
+			p->TranslatedPoints.Add(fv);
+
+		}
 	}
 
 
@@ -608,4 +647,222 @@ void UMyBlueprintFunctionLibrary::recalcGraphTranslatedPoints(int32 handle)
 
 
 
+}
+
+UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
+void UMyBlueprintFunctionLibrary::returnPointSetTranslatedPoints(int32 graphHandle, int32 pointSetHandle, TArray<FVector2D> &translatedPoints, FVector2D &markerSize,
+	bool & isOverFlowUp, bool & isOverFlowDown, bool& isOverFlowLeft, bool & isOverFlowRight) //TEnumAsByte<EOverflowDirection> & overflowDirection)
+{
+	FVector2D pout;
+	//EOverflowDirection ev = EOverflowDirection::NONE;
+	FGraphData * pFg = &gGraphs[graphHandle];
+
+
+	translatedPoints.Empty();
+
+	bool up = false;
+	bool down = false;
+	bool left = false;
+	bool right = false;
+	//			overflowDirection.Empty();
+		/*	LogTemp:Warning: X:20.200005 maxRange : 20.000000
+				LogTemp : Warning : X : 27.200031 maxRange : 25.000000
+				LogTemp : Warning : X : 31.200047 maxRange : 30.000000
+				LogTemp : Warning : X : 38.800076 maxRange : 35.000000*/
+
+	for (FVector2D p : gPointSets[pointSetHandle])
+	{
+
+
+
+		//test for overflow
+
+
+		if (p.X < pFg->minRangeX&&!left)
+		{
+			//	overflowDirection=EOverflowDirection::LEFT;
+			isOverFlowLeft = true;
+			left = true;
+		}
+
+		if ((p.X> pFg->maxRangeX ) && !right)
+		{
+			//UE_LOG(LogTemp, Warning, TEXT("X:%f maxRange:%f"), p.X, pFg->maxRangeX);
+			isOverFlowRight = true;
+			//overflowDirection = EOverflowDirection::RIGHT;
+			right = true;
+			//	pFg->maxRangeX += 5;
+				//pFg->minRangeX += 5;
+
+				/*createGraph(graphHandle,
+					pFg->height,
+					pFg->width,
+					pFg->cellsize,
+					pFg->offsetX,
+					pFg->offsetY,
+					pFg->rangeOffsetX,
+					pFg->rangeOffsetY,
+					pFg->offsetLabelX,
+					pFg->offsetLabelY,
+					pFg->defaultMarkerSize,
+					pFg->minRangeX,
+					pFg->maxRangeX,
+					pFg->minRangeX,
+					pFg->maxRangeY);
+*/
+
+//				pFg->rangeOffsetX + 5;
+
+
+		}
+
+		if (p.Y > pFg->maxRangeY&&!up)
+		{
+			isOverFlowUp = true;
+			//overflowDirection=EOverflowDirection::UP;
+			up = true;
+		}
+
+		if (p.Y < pFg->minRangeY&&!down)
+		{
+			isOverFlowDown = true;
+			//overflowDirection=EOverflowDirection::DOWN;
+			down = true;
+		}
+
+		//problem is that in line drawing mode, it will act as though it didn't drop out and will connect with next in-frame point
+		if (translateGraphPoint(graphHandle, gGraphs[graphHandle].defaultMarkerSize, p, pout))
+		{
+			translatedPoints.Add(pout);
+		}
+		else
+		{
+			translatedPoints.Add(pout);
+		}
+
+
+	}
+
+	markerSize.X = pFg->defaultMarkerSize;
+	markerSize.Y = markerSize.X;
+}
+
+UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
+bool UMyBlueprintFunctionLibrary::generateAxisFromID2(int32 id, TArray<FVector4> &lines)
+{
+	//	const int cellsize = 20;   // 20 pixels wide/high cells. 
+	FVector4 fv;
+	FGraphData * pFg;
+
+	pFg= &gGraphs[id]; //TODO test for valid key
+
+
+	//trying
+	//float Xrange = fg.maxRangeX - fg.minRangeX;	//float Yrange = fg.maxRangeY - fg.minRangeY;
+
+
+//	float Xrange = FMath::Abs(pFg->maxRangeX) + FMath::Abs(pFg->minRangeX);
+
+//xrange and yrange are the number of ticks or lines for the axis
+	float Xrange = FMath::Abs(pFg->maxRangeX - pFg->minRangeX);
+	float Yrange = FMath::Abs(pFg->maxRangeY - pFg->minRangeY); //TODO: figure out the + - issue
+
+
+	//assume 10 -0 = 10
+	//10 lines after the origin, 11 in total
+	int nVXlines = Xrange;
+	pFg->cellsize = ceil(pFg->width / (float)nVXlines);
+
+	pFg->cellLengthX = pFg->width / (float)nVXlines;
+
+	//fg.scaleX = (float)nVXlines / fg.width / (float)fg.cellsize; // ||
+	int nHYlines = Yrange;
+	pFg->cellHeightY = (int)(pFg->height / (float)nHYlines);// = //TEMPORARY!
+
+	//UE_LOG(LogTemp, Warning, TEXT("nvx:%d nhy:%d xrange:%f yrange:%f, cellLengthX:%d, cellLengthY:%f, width:%f, height:%f"), nVXlines, nHYlines,
+//		Xrange, Yrange, pFg->cellLengthX, pFg->cellHeightY, pFg->width, pFg->height);
+
+	int i = 0;
+	for (i = 0; i <= nVXlines; i++)// ||
+	{
+
+		fv.X = i * pFg->cellLengthX;
+		fv.Y = 0;
+		fv.Z = i * pFg->cellLengthX;
+		fv.W = pFg->height;// gridNum * fg.cellsize <= FMath::Abs(fg.height) ? gridNum * fg.cellsize : fg.height;
+//		UE_LOG(LogTemp, Warning, TEXT("->X:%f Y:%f z:%f W:%f"), fv.X, fv.Y, fv.Z, fv.W);
+		lines.Add(fv);
+
+	}
+
+
+	for (i = 0; i <= nHYlines; i++) // =
+	{
+
+		//draws frim right to left <----
+		fv.X = pFg->width;// i * tempcellsize ; // just width.
+		fv.Y = i * pFg->cellHeightY;
+
+		//.Z is where I start relative to Left side...it is the left boundary
+		fv.Z = 0; //z= endpoint Y, if endpoint Y=0 then this is along the X AXIS
+		fv.W = i*pFg->cellHeightY; //really endpoint.X W=X
+
+
+		//GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Yellow,  FString::FromInt(fv.Y));
+
+
+		lines.Add(fv);
+
+
+	}
+
+//	UE_LOG(LogTemp, Warning, TEXT("****************"));
+	return true;
+
+
+//	int gridNum = (int)((fg.width) / fg.cellsize);
+//	int numHlines = fg.height / fg.cellsize;
+//
+//	//gridum = 1000/100 = 100
+//	//numH = 500/100 =  5
+////	int i;
+//	for (i = 0; i <= gridNum; i++)
+//	{
+//		//	DrawLine(0, i * cellsize, gridSize * cellsize, i * cellsize);
+//		//DRAW HOIZONTAL LINES , X =0 Y increases
+//		fv.Z = 0; //z= endpoint Y, if endpoint Y=0 then this is along the X AXIS
+//
+//				  //if (i*fg.cellsize <= FMath::Abs(fg.height))
+//		if (i <= numHlines)
+//			fv.W = i*fg.cellsize; //really endpoint.X W=X
+//		else
+//			goto skip;
+//
+//		fv.X = gridNum * fg.cellsize; // just width.
+//		fv.Y = i * fg.cellsize;
+//
+//		//GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Yellow,  FString::FromInt(fv.Y));
+//
+//
+//		lines.Add(fv);
+//	skip:
+//		//DrawLine(i * cellsize, 0, i * cellsize, gridSize * cellsize);
+//		//Draw VERTICAL , Y=0 X increases
+//		fv.X = i * fg.cellsize;
+//		fv.Y = 0;
+//		fv.Z = i * fg.cellsize;
+//
+//		//UE_LOG(LogTemp, Warning, TEXT("X:%f Y:%f z:%f W:%f"), fv.X, fv.Y, fv.Z, fv.W);
+//
+//
+//		fv.W = gridNum * fg.cellsize <= FMath::Abs(fg.height) ? gridNum * fg.cellsize : fg.height;
+//
+//
+//		lines.Add(fv);
+//
+//
+//
+//	}
+
+	return true;
 }
