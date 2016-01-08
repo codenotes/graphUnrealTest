@@ -18,7 +18,7 @@
 void AMyHUD::DrawHUD()
 {
 	Super::DrawHUD();
-
+	UE_LOG(LogTemp, Warning, TEXT("DrawHUD called"));
 	FVector2D start, stop;
 
 	start.X = 0;
