@@ -367,6 +367,21 @@ void UPlotGraphLibrary::generateGraphOffsets(float height, float width, int32 ce
 
 	}
 }
+
+
+
+static FORCEINLINE FString GetFloatAsStringWithPrecision(float TheFloat, int32 Precision, bool IncludeLeadingZero = true)
+{
+	FNumberFormattingOptions NumberFormat;					//Text.h
+	NumberFormat.MinimumIntegralDigits = (IncludeLeadingZero) ? 1 : 0;
+	NumberFormat.MaximumIntegralDigits = 10000;
+	NumberFormat.MinimumFractionalDigits = Precision;
+	NumberFormat.MaximumFractionalDigits = Precision;
+	return FText::AsNumber(TheFloat, &NumberFormat).ToString();
+}
+
+
+
 UFUNCTION(BlueprintCallable, Category = "ROS_GRAPH")
 void UPlotGraphLibrary::generateGraphOffsetsFromID(int32 id, FVector4 line, FVector2D &PointA, FVector2D &PointB, FString & labelX,
 	FString &labelY, bool & isLabelX, FVector2D & labelPosition, bool & isOriginLine)
@@ -407,10 +422,12 @@ void UPlotGraphLibrary::generateGraphOffsetsFromID(int32 id, FVector4 line, FVec
 		val = x*scale + minrange
 		return val*/
 	
-	float ylevel = (line.Y / fg.cellHeightY)*fg.scaleY + fg.minRangeY;
+	float ylevel = ((fg.height-line.Y) / fg.cellHeightY)*fg.scaleY + fg.minRangeY;
 	
 	float xlevel = line.X/fg.cellLengthX + fg.minRangeX ;
 
+
+	//ylevel *= -1;
 
 	FString s;
 #endif
@@ -436,11 +453,12 @@ void UPlotGraphLibrary::generateGraphOffsetsFromID(int32 id, FVector4 line, FVec
 	}
 	else //Y Label
 	{
-		//UE_LOG(LogTemp, Warning, TEXT("y:%f h:%f mrangy:%f scale:%f range:%f calc:%f"), line.Y, fg.cellHeightY, fg.maxRangeY, fg.scaleY, FMath::Abs(fg.maxRangeY - fg.minRangeY), ylevel);
+		UE_LOG(LogTemp, Warning, TEXT("y:%f h:%f mrangy:%f scale:%f range:%f calc:%f"), line.Y, fg.cellHeightY, fg.maxRangeY, fg.scaleY, FMath::Abs(fg.maxRangeY - fg.minRangeY), ylevel);
 		
 		
 		//float numHlines = fg.height / fg.cellsize;
-		labelY = FString::SanitizeFloat(ylevel);//FString::Printf(TEXT("%f"), ylevel); 
+		//labelY = FString::SanitizeFloat(ylevel);//FString::Printf(TEXT("%f"), ylevel); 
+		labelY = GetFloatAsStringWithPrecision(ylevel, 2);
 		//	GEngine->AddOnScreenDebugMessage(-1, 0.5f, FColor::Red, FString::FromInt(line.Y));
 		//	labelY = FString::FromInt((int32)((line.Y)));
 		isLabelX = false;
